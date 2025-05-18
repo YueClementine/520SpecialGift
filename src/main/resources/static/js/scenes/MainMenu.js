@@ -24,7 +24,8 @@ class MainMenu extends Phaser.Scene {
         
         // 创建粒子效果 - 使用Phaser 3.70.0的新API
         try {
-            // 直接创建粒子
+            // 直接创建粒子 - 使用Phaser 3.70.0兼容语法
+            // 这种方式在3.70.0中仍然有效
             this.add.particles(width / 2, height / 2, 'heart', {
                 lifespan: 2000,
                 speed: { min: 50, max: 100 },
@@ -35,6 +36,33 @@ class MainMenu extends Phaser.Scene {
             });
         } catch(e) {
             console.error('创建粒子效果失败:', e);
+            
+            // 如果粒子系统失败，使用备用方案
+            try {
+                // 创建几个心形图像作为替代
+                for (let i = 0; i < 5; i++) {
+                    const heart = this.add.image(
+                        Phaser.Math.Between(width * 0.3, width * 0.7),
+                        Phaser.Math.Between(height * 0.3, height * 0.7),
+                        'heart'
+                    );
+                    
+                    heart.setAlpha(0.5);
+                    heart.setScale(0.15);
+                    
+                    // 添加简单动画
+                    this.tweens.add({
+                        targets: heart,
+                        alpha: { from: 0.5, to: 0 },
+                        scale: { from: 0.15, to: 0.05 },
+                        y: heart.y - 100,
+                        duration: 2000,
+                        repeat: -1
+                    });
+                }
+            } catch (e2) {
+                console.error('备用动画创建失败:', e2);
+            }
         }
         
         // 添加游戏选择文本 - 向下调整位置
@@ -357,6 +385,82 @@ class MainMenu extends Phaser.Scene {
                     const name = actualInputElement ? actualInputElement.value.trim() : '';
                     console.log('输入的名字:', name);
                     if (name) {
+                        // 检查名字是否为有效名字（isla、张歪歪或张雅媛）
+                        const validNames = ['isla', '张歪歪', '张雅媛'];
+                        if (!validNames.includes(name.toLowerCase())) {
+                            // 名字不正确，播放错误视频
+                            console.log('名字不正确，播放错误视频');
+                            
+                            // 清除输入框和按钮
+                            const elementsToDestroy = [
+                                { name: 'inputDOM', element: inputDOM },
+                                { name: 'buttonsDOM', element: buttonsDOM }
+                            ];
+                            
+                            for (const item of elementsToDestroy) {
+                                try {
+                                    if (item.element && typeof item.element.destroy === 'function') {
+                                        item.element.destroy();
+                                    }
+                                } catch (err) {
+                                    console.error(`销毁元素时出错 ${item.name}:`, err);
+                                }
+                            }
+                            
+                            // 修改提示文本
+                            promptText.setText('密码错误!');
+                            promptText.setStyle({ fontSize: '32px', fill: '#ff0000', fontWeight: 'bold' });
+                            
+                            // 创建视频元素
+                            const videoElement = document.createElement('video');
+                            videoElement.id = 'wrong-video';
+                            videoElement.style = `
+                                width: 320px;
+                                height: 240px;
+                                border-radius: 8px;
+                                box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+                            `;
+                            videoElement.src = 'assets/videos/wrong.mp4';
+                            videoElement.autoplay = true;
+                            
+                            // 当视频结束时删除元素并返回主菜单
+                            videoElement.onended = () => {
+                                try {
+                                    // 清除所有元素
+                                    const allElementsToDestroy = [
+                                        { name: 'overlay', element: overlay },
+                                        { name: 'dialog', element: dialog },
+                                        { name: 'promptText', element: promptText }
+                                    ];
+                                    
+                                    for (const item of allElementsToDestroy) {
+                                        if (item.element && typeof item.element.destroy === 'function') {
+                                            item.element.destroy();
+                                        }
+                                    }
+                                    
+                                    // 移除视频DOM
+                                    if (videoDOM && typeof videoDOM.destroy === 'function') {
+                                        videoDOM.destroy();
+                                    }
+                                    
+                                    // 强制清理残留的DOM元素
+                                    this.cleanupExistingInputs();
+                                    
+                                    // 回到主菜单
+                                    this.scene.restart();
+                                } catch (err) {
+                                    console.error('清理视频元素时出错:', err);
+                                    this.scene.restart();
+                                }
+                            };
+                            
+                            // 添加视频DOM到Phaser
+                            const videoDOM = this.add.dom(width / 2, height / 2 + 30).createFromHTML(videoElement.outerHTML);
+                            
+                            return; // 不继续执行后面的代码
+                        }
+                        
                         // 设置玩家名字
                         if (this.game.global) {
                             this.game.global.playerName = name;

@@ -27,6 +27,18 @@ class Preloader extends Phaser.Scene {
             this.load.totalToLoad--;
         });
         
+        // 动态加载心形光标JS脚本
+        try {
+            // 创建脚本标签
+            const script = document.createElement('script');
+            script.src = 'js/heartCursor.js';
+            script.onload = () => console.log('心形光标脚本加载成功');
+            script.onerror = (e) => console.error('心形光标脚本加载失败:', e);
+            document.head.appendChild(script);
+        } catch (e) {
+            console.error('加载心形光标脚本失败:', e);
+        }
+        
         // 加载游戏资源
         this.load.image('background', 'assets/background.jpg');
         this.load.image('logo', 'assets/logo.png');

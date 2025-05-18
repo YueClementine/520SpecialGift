@@ -20,11 +20,85 @@ class PuzzleScene extends Phaser.Scene {
         this.assetsLoaded = false;
         
         // 添加版本号，用于验证是否正确加载了修改后的场景
-        this.version = "2.3"; // 更新版本号到2.3
-        console.log("PuzzleScene构造函数执行，版本：", this.version, "- 全面优化拼图交互体验 + 完成效果");
+        this.version = "2.4"; // 更新版本号到2.4
+        console.log("PuzzleScene构造函数执行，版本：", this.version, "- 修复场景重新进入问题");
+    }
+
+    // 添加场景关闭时的清理方法
+    shutdown() {
+        console.log("PuzzleScene关闭，执行资源清理");
+        this.cleanupResources();
+        super.shutdown();
+    }
+    
+    // 添加场景摧毁时的清理方法
+    destroy() {
+        console.log("PuzzleScene销毁，执行资源清理");
+        this.cleanupResources();
+        super.destroy();
+    }
+    
+    // 集中资源清理逻辑
+    cleanupResources() {
+        // 清理拼图块和相关资源
+        if (this.puzzlePieces && this.puzzlePieces.length > 0) {
+            for (let piece of this.puzzlePieces) {
+                if (!piece) continue;
+                
+                // 移除拖拽交互
+                if (piece.input) {
+                    piece.removeInteractive();
+                }
+                
+                // 移除边框
+                if (piece.border) {
+                    piece.border.destroy();
+                    piece.border = null;
+                }
+                
+                // 移除纹理
+                const textureKey = `piece_${Math.floor(piece.originalIndex / this.gridSizeX)}_${piece.originalIndex % this.gridSizeX}`;
+                if (this.textures.exists(textureKey)) {
+                    this.textures.remove(textureKey);
+                }
+            }
+        }
+        
+        // 清空数组
+        this.puzzlePieces = [];
+        this.piecePositions = [];
+        
+        // 移除输入事件
+        if (this.input) {
+            this.input.off('dragstart');
+            this.input.off('drag');
+            this.input.off('dragend');
+        }
+        
+        // 重置状态
+        this.completed = false;
+        this.progressText = null;
+        this.shuffledOnce = false;
+        this.assetsLoaded = false;
     }
 
     preload() {
+        // 清理可能存在的旧资源
+        try {
+            // 如果纹理已存在，先移除它们
+            for (let row = 0; row < this.gridSizeY; row++) {
+                for (let col = 0; col < this.gridSizeX; col++) {
+                    const textureKey = `piece_${row}_${col}`;
+                    if (this.textures.exists(textureKey)) {
+                        this.textures.remove(textureKey);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('预加载清理旧资源时出错:', e);
+            // 继续执行，不中断加载流程
+        }
+        
         // 添加加载错误处理
         this.load.on('loaderror', (fileObj) => {
             console.error('资源加载失败:', fileObj.key);
@@ -53,6 +127,12 @@ class PuzzleScene extends Phaser.Scene {
     }
 
     create() {
+        console.log("开始创建拼图场景...");
+        
+        // 确保拼图数组和位置数组已初始化
+        this.puzzlePieces = [];
+        this.piecePositions = [];
+        
         // 确保游戏能继续，即使资源加载失败
         if (!this.textures.exists('puzzle-bg')) {
             console.error('拼图背景资源未能加载，使用备用颜色');
@@ -155,6 +235,22 @@ class PuzzleScene extends Phaser.Scene {
             resetBtn.on('pointerover', () => resetBtn.setTint(0xdddddd));
             resetBtn.on('pointerout', () => resetBtn.clearTint());
             resetBtn.on('pointerdown', () => this.resetPuzzle());
+            
+            // 添加返回主菜单按钮
+            const backBtn = this.add.text(width / 2 - 150, buttonY, '返回主菜单', {
+                fontSize: '20px',
+                fill: '#ffffff',
+                backgroundColor: '#4455aa',
+                padding: { x: 15, y: 8 },
+                borderRadius: 8
+            }).setOrigin(0.5);
+            
+            backBtn.setInteractive({ useHandCursor: true });
+            backBtn.on('pointerover', () => backBtn.setStyle({ backgroundColor: '#5566bb' }));
+            backBtn.on('pointerout', () => backBtn.setStyle({ backgroundColor: '#4455aa' }));
+            backBtn.on('pointerdown', () => {
+                this.scene.start('MainMenu');
+            });
         } catch (e) {
             // 显示错误信息并允许返回
             this.add.text(width / 2, height / 2, '初始化拼图游戏时出错:\n' + e.message, {
@@ -180,16 +276,40 @@ class PuzzleScene extends Phaser.Scene {
     }
     
     createPuzzlePieces(width, height) {
+        console.log("开始创建拼图块...");
+        
+        // 确保没有残留的拼图块
+        this.puzzlePieces = [];
+        this.piecePositions = [];
+        
         // 计算拼图区域
         const totalWidth = this.pieceWidth * this.gridSizeX;
         const totalHeight = this.pieceHeight * this.gridSizeY;
         const startX = width/2 - totalWidth/2 + this.pieceWidth/2;
         const startY = height/2 - 20 - totalHeight/2 + this.pieceHeight/2;
         
+        // 安全检查：确保texture存在
+        if (!this.textures.exists('puzzle-image')) {
+            console.error('无法创建拼图块：puzzle-image纹理不存在');
+            throw new Error('拼图图像资源未加载');
+        }
+        
         // 获取原始图像
         const texture = this.textures.get('puzzle-image');
+        if (!texture || !texture.source || !texture.source[0]) {
+            console.error('无法获取puzzle-image纹理源');
+            throw new Error('拼图图像格式无效');
+        }
+        
         const sourceWidth = texture.source[0].width;
         const sourceHeight = texture.source[0].height;
+        
+        if (!sourceWidth || !sourceHeight) {
+            console.error('拼图图像尺寸无效：', sourceWidth, sourceHeight);
+            throw new Error('拼图图像尺寸无效');
+        }
+        
+        console.log(`拼图原图尺寸: ${sourceWidth}x${sourceHeight}`);
         
         // 计算每块拼图在原始图像中的尺寸
         const pieceSourceWidth = sourceWidth / this.gridSizeX;
@@ -201,6 +321,9 @@ class PuzzleScene extends Phaser.Scene {
             for (let col = 0; col < this.gridSizeX; col++) {
                 const x = startX + col * this.pieceWidth;
                 const y = startY + row * this.pieceHeight;
+                
+                // 保存正确位置坐标到位置数组
+                this.piecePositions[index] = { x, y };
                 
                 // 裁剪原始图像
                 try {
@@ -216,8 +339,14 @@ class PuzzleScene extends Phaser.Scene {
                     const canvas = this.textures.createCanvas(textureKey, pieceSourceWidth, pieceSourceHeight);
                     const ctx = canvas.getContext('2d');
                     
-                    // 绘制图像切片到画布
+                    // 获取源图像，添加安全检查
                     const sourceImage = texture.getSourceImage();
+                    if (!sourceImage) {
+                        console.error(`无法获取源图像, row=${row}, col=${col}`);
+                        continue; // 跳过这一块拼图，继续创建其他拼图
+                    }
+                    
+                    // 绘制图像切片到画布
                     ctx.drawImage(
                         sourceImage,
                         col * pieceSourceWidth, row * pieceSourceHeight, // 源图像裁剪起点
@@ -231,6 +360,11 @@ class PuzzleScene extends Phaser.Scene {
                     
                     // 创建拼图块
                     const piece = this.add.image(x, y, textureKey);
+                    if (!piece) {
+                        console.error(`创建拼图块图像失败, row=${row}, col=${col}`);
+                        continue;
+                    }
+                    
                     piece.setDisplaySize(this.pieceWidth - 5, this.pieceHeight - 5);
                     piece.setOrigin(0.5);
                     
@@ -254,9 +388,6 @@ class PuzzleScene extends Phaser.Scene {
                     piece.currentIndex = index; // 当前位置索引
                     piece.correctIndex = index; // 正确位置索引
                     
-                    // 保存正确位置坐标
-                    this.piecePositions[index] = { x, y };
-                    
                     // 启用拖拽
                     piece.setInteractive();
                     this.input.setDraggable(piece);
@@ -267,9 +398,18 @@ class PuzzleScene extends Phaser.Scene {
                     index++;
                 } catch (e) {
                     console.error(`创建拼图块失败: ${row},${col}`, e);
+                    // 继续创建其他拼图块，不中断整个过程
                 }
             }
         }
+        
+        // 安全检查：确保至少创建了一些拼图块
+        if (this.puzzlePieces.length === 0) {
+            console.error('没有成功创建任何拼图块');
+            throw new Error('拼图创建失败');
+        }
+        
+        console.log(`成功创建了 ${this.puzzlePieces.length} 块拼图`);
         
         // 添加拖拽事件
         this.input.on('dragstart', (pointer, gameObject) => {
