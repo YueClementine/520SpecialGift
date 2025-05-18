@@ -1,21 +1,21 @@
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: window.innerWidth,
+    height: window.innerHeight,
     parent: 'game-container',
     backgroundColor: '#fce4ec',
     scene: [
         Boot, 
         Preloader, 
         MainMenu, 
-        StoryScene, 
+        StoryScene,
+        RiddleScene,
+        QuizScene,
+        PuzzleScene,
         PuzzleScene1, 
         PuzzleScene2, 
         PuzzleScene3, 
-        FinalScene,
-        RiddleScene,
-        QuizScene,
-        PuzzleScene
+        FinalScene
     ],
     physics: {
         default: 'arcade',
@@ -26,11 +26,22 @@ const config = {
     },
     dom: {
         createContainer: true
+    },
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: '100%',
+        height: '100%'
     }
 };
 
 // 游戏实例
 const game = new Phaser.Game(config);
+
+// 添加窗口大小改变事件监听器
+window.addEventListener('resize', function() {
+    game.scale.resize(window.innerWidth, window.innerHeight);
+});
 
 // 游戏全局变量
 game.global = {

@@ -53,7 +53,17 @@ class PuzzleScene3 extends Phaser.Scene {
         submitButton.on('pointerover', () => submitButton.setScale(1.1));
         submitButton.on('pointerout', () => submitButton.setScale(1));
         submitButton.on('pointerdown', () => {
-            this.sound.play('click');
+            // 安全播放音效
+            if (this.game.global && this.game.global.playSound) {
+                this.game.global.playSound('click');
+            } else {
+                // 回退方法
+                try {
+                    this.sound.play('click');
+                } catch(e) {
+                    console.error('无法播放音效:', e);
+                }
+            }
             this.checkAnswer();
         });
         
@@ -64,7 +74,17 @@ class PuzzleScene3 extends Phaser.Scene {
         hintButton.on('pointerover', () => hintButton.setScale(0.8));
         hintButton.on('pointerout', () => hintButton.setScale(0.7));
         hintButton.on('pointerdown', () => {
-            this.sound.play('click');
+            // 安全播放音效
+            if (this.game.global && this.game.global.playSound) {
+                this.game.global.playSound('click');
+            } else {
+                // 回退方法
+                try {
+                    this.sound.play('click');
+                } catch(e) {
+                    console.error('无法播放音效:', e);
+                }
+            }
             this.showHint();
         });
         
@@ -83,15 +103,17 @@ class PuzzleScene3 extends Phaser.Scene {
         this.game.global.saveProgress(3, { attempts: this.attempts });
         
         // 添加一些装饰
-        const hearts = this.add.particles('heart');
-        hearts.createEmitter({
-            x: { min: 0, max: width },
-            y: -10,
-            speedY: { min: 50, max: 100 },
-            scale: { start: 0.1, end: 0 },
-            lifespan: 4000,
-            frequency: 500
-        });
+        try {
+            this.add.particles(0, -10, 'heart', {
+                x: { min: 0, max: width },
+                speedY: { min: 50, max: 100 },
+                scale: { start: 0.1, end: 0 },
+                lifespan: 4000,
+                frequency: 500
+            });
+        } catch(e) {
+            console.error('创建粒子效果失败:', e);
+        }
     }
     
     checkAnswer() {
@@ -103,21 +125,32 @@ class PuzzleScene3 extends Phaser.Scene {
             this.resultText.setStyle({ fill: '#00ff00' });
             
             // 播放成功音效
-            this.sound.play('success');
+            if (this.game.global && this.game.global.playSound) {
+                this.game.global.playSound('success');
+            } else {
+                // 回退方法
+                try {
+                    this.sound.play('success');
+                } catch(e) {
+                    console.error('无法播放音效:', e);
+                }
+            }
             
-            // 粒子特效
-            const particles = this.add.particles('heart');
-            const emitter = particles.createEmitter({
-                x: this.cameras.main.width / 2,
-                y: this.cameras.main.height / 2,
-                speed: { min: 100, max: 300 },
-                angle: { min: 0, max: 360 },
-                scale: { start: 0.4, end: 0 },
-                lifespan: 3000,
-                quantity: 10,
-                frequency: 50,
-                duration: 2000
-            });
+            // 粒子特效 - 使用Phaser 3.70.0的新API
+            try {
+                // 直接创建粒子
+                this.add.particles(this.cameras.main.width / 2, this.cameras.main.height / 2, 'heart', {
+                    speed: { min: 100, max: 300 },
+                    angle: { min: 0, max: 360 },
+                    scale: { start: 0.4, end: 0 },
+                    lifespan: 3000,
+                    quantity: 10,
+                    frequency: 50,
+                    duration: 2000
+                });
+            } catch(e) {
+                console.error('创建粒子效果失败:', e);
+            }
             
             // 显示成功文本
             const successText = this.add.text(
@@ -194,7 +227,17 @@ class PuzzleScene3 extends Phaser.Scene {
         closeButton.setInteractive({ useHandCursor: true });
         
         closeButton.on('pointerup', () => {
-            this.sound.play('click');
+            // 安全播放音效
+            if (this.game.global && this.game.global.playSound) {
+                this.game.global.playSound('click');
+            } else {
+                // 回退方法
+                try {
+                    this.sound.play('click');
+                } catch(e) {
+                    console.error('无法播放音效:', e);
+                }
+            }
             overlay.destroy();
             dialog.destroy();
             titleText.destroy();

@@ -289,17 +289,21 @@ class QuizScene extends Phaser.Scene {
         });
         finalPanel.add(nextSceneBtn);
         
-        // 添加爱心粒子效果
-        const particles = this.add.particles('heart');
-        particles.createEmitter({
-            x: { min: width / 2 - 300, max: width / 2 + 300 },
-            y: { min: height / 2 - 200, max: height / 2 + 200 },
-            speed: { min: 50, max: 100 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.2, end: 0 },
-            lifespan: 2000,
-            quantity: 2,
-            frequency: 200
-        });
+        // 添加爱心粒子效果 - 使用Phaser 3.70.0的新API
+        try {
+            // 直接创建粒子
+            this.add.particles(width / 2, height / 2, 'heart', {
+                x: { min: -300, max: 300 },
+                y: { min: -200, max: 200 },
+                speed: { min: 50, max: 100 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 0.2, end: 0 },
+                lifespan: 2000,
+                quantity: 2,
+                frequency: 200
+            });
+        } catch(e) {
+            console.error('创建粒子效果失败:', e);
+        }
     }
 } 

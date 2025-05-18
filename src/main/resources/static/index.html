@@ -5,25 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>520特别礼物 - 我们的回忆之旅</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="shortcut icon" href="assets/favicon.png" type="image/png">
+    
+    <!-- 清除缓存元标签 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
 <body>
     <div id="game-container"></div>
     
-    <script src="js/phaser.min.js"></script>
-    <script src="js/scenes/Boot.js"></script>
-    <script src="js/scenes/Preloader.js"></script>
-    <script src="js/scenes/MainMenu.js"></script>
-    <script src="js/scenes/StoryScene.js"></script>
-    <script src="js/scenes/PuzzleScene1.js"></script>
-    <script src="js/scenes/PuzzleScene2.js"></script>
-    <script src="js/scenes/PuzzleScene3.js"></script>
-    <script src="js/scenes/FinalScene.js"></script>
+    <script src="js/phaser.min.js?v=3.70.0"></script>
+    <script src="js/scenes/Boot.js?v=1.2"></script>
+    <script src="js/scenes/Preloader.js?v=1.2"></script>
+    <script src="js/scenes/MainMenu.js?v=1.2"></script>
+    <script src="js/scenes/StoryScene.js?v=1.2"></script>
+    <script src="js/scenes/PuzzleScene1.js?v=1.2"></script>
+    <script src="js/scenes/PuzzleScene2.js?v=1.2"></script>
+    <script src="js/scenes/PuzzleScene3.js?v=1.2"></script>
+    <script src="js/scenes/FinalScene.js?v=1.2"></script>
     
     <!-- 新增的场景 -->
-    <script src="js/scenes/custom/RiddleScene.js"></script>
-    <script src="js/scenes/custom/QuizScene.js"></script>
-    <script src="js/scenes/custom/PuzzleScene.js"></script>
+    <script src="js/scenes/custom/RiddleScene.js?v=1.2"></script>
+    <script src="js/scenes/custom/QuizScene.js?v=1.2"></script>
+    <script src="js/scenes/custom/PuzzleScene.js?v=2.3"></script>
     
-    <script src="js/game.js"></script>
+    <script src="js/game.js?v=1.2"></script>
+    
+    <script>
+        // 打印当前加载的Phaser版本，用于调试
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Phaser 版本: ' + Phaser.VERSION);
+            console.log('强制刷新缓存: ' + new Date().toISOString());
+        });
+    </script>
 </body>
 </html> 

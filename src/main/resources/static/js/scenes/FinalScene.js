@@ -10,11 +10,13 @@ class FinalScene extends Phaser.Scene {
         // 背景
         this.add.image(width / 2, height / 2, 'final-bg').setDisplaySize(width, height);
         
-        // 创建爱心粒子效果
-        const heartParticles = this.add.particles('heart');
-        
-        // 创建多个发射器形成心形
-        this.createHeartShape(heartParticles, width / 2, height / 2);
+        // 创建爱心粒子效果 - 使用Phaser 3.70.0的新API
+        try {
+            // 直接创建粒子，不再需要粒子管理器
+            this.createHeartShape(width / 2, height / 2);
+        } catch(e) {
+            console.error('创建粒子效果失败:', e);
+        }
         
         // 添加520闪烁文字
         const text520 = this.add.text(width / 2, height / 4, '520', {
@@ -103,8 +105,8 @@ class FinalScene extends Phaser.Scene {
         });
     }
     
-    // 创建心形粒子
-    createHeartShape(particles, centerX, centerY) {
+    // 创建心形粒子 - 使用Phaser 3.70.0的新API
+    createHeartShape(centerX, centerY) {
         // 心形函数参数
         const scale = 10;
         const heartPoints = [];
@@ -121,11 +123,9 @@ class FinalScene extends Phaser.Scene {
             });
         }
         
-        // 为每个点创建发射器
+        // 为每个点创建粒子
         heartPoints.forEach(point => {
-            particles.createEmitter({
-                x: point.x,
-                y: point.y,
+            this.add.particles(point.x, point.y, 'heart', {
                 speed: { min: 10, max: 30 },
                 angle: { min: 0, max: 360 },
                 scale: { start: 0.1, end: 0 },
@@ -136,9 +136,7 @@ class FinalScene extends Phaser.Scene {
         });
         
         // 创建中心大爆发
-        particles.createEmitter({
-            x: centerX,
-            y: centerY,
+        this.add.particles(centerX, centerY, 'heart', {
             speed: { min: 100, max: 200 },
             angle: { min: 0, max: 360 },
             scale: { start: 0.3, end: 0 },
